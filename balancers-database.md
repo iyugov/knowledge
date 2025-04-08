@@ -59,6 +59,7 @@
 3. На каждом из тех же хостов откроем порты для балансировки и веб-интерфейса:
 
     ```sh
+    sudo ufw allow postgresql
     sudo ufw allow 5433/tcp
     sudo ufw allow 5434/tcp
     sudo ufw allow 7000/tcp
@@ -90,11 +91,9 @@
 7. На каждом из роутеров "Router1" и "Router2" выполним перенаправление портов для доступа к веб-интерфейсу HAProxy из внешней сети для проверки:
 
     ```mikrotik
+    ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=7000 action=dst-nat to-addresses=192.168.3.14 to-ports=7000
     ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=7001 action=dst-nat to-addresses=192.168.3.3 to-ports=7000
-
     ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=7002 action=dst-nat to-addresses=192.168.3.4 to-ports=7000
-
-    ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=7003 action=dst-nat to-addresses=192.168.3.14 to-ports=7000
     ```
 
     Проверим доступность веб-интерфейса и авторизации (каталог `/stats`).

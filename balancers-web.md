@@ -39,7 +39,7 @@
 
     http {
         upstream backend {
-            hash $cookie_sessionid consistent;
+            ip_hash;
             server 192.168.3.5:80 max_fails=1 fail_timeout=3s;
             server 192.168.3.6:80 max_fails=1 fail_timeout=3s;
         }
@@ -93,6 +93,8 @@
 
     ```mikrotik
     ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=8080 action=dst-nat to-addresses=192.168.3.14 to-ports=80
+    ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=8081 action=dst-nat to-addresses=192.168.3.3 to-ports=80
+    ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=8082 action=dst-nat to-addresses=192.168.3.4 to-ports=80
     ```
 
 5. Проверим подключение из внешней сети, в том числе при неработоспособности одного балансировщика и/или одного веб-сервера.

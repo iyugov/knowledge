@@ -100,9 +100,7 @@
 8. Выполним следующие подключения:
     * роутер "Router1", интерфейс `ether1` - облако "ISP1", интерфейс `virbr0`;
     * роутер "Router2", интерфейс `ether1` - облако "ISP2", интерфейс `virbr0`;
-    * роутер "Router1", интерфейс `ether2` - роутер "Router2", интерфейс `ether2`;
-    * роутер "Router1", интерфейс `ether3` - коммутатор "Switch1", интерфейс `eth2`;
-    * роутер "Router2", интерфейс `ether3` - коммутатор "Switch2", интерфейс `eth2`;
+    * роутер "Router2", интерфейс `ether2` - коммутатор "Switch2", интерфейс `eth2`;
     * коммутатор "Switch1", интерфейс `eth0` - коммутатор "Switch2", интерфейс `eth0`;
     * коммутатор "Switch1", интерфейс `eth1` - коммутатор "Switch2", интерфейс `eth1`;
     * коммутатор "Switch1", интерфейс `eth3` - сервер "Balancer1", интерфейс `Ethernet0`;
@@ -141,11 +139,9 @@
         ```mikrotik
         interface enable ether1
         interface enable ether2
-        interface enable ether3
         ip route add dst-address=0.0.0.0/0 gateway=192.168.1.1 check-gateway=ping distance=1
         ip route add dst-address=0.0.0.0/0 gateway=192.168.1.2 check-gateway=ping distance=2
-        ip address add address=192.168.2.1/30 interface=ether2
-        ip address add address=192.168.3.1/28 interface=ether3
+        ip address add address=192.168.3.1/28 interface=ether2
         ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade
         ```
 
@@ -154,11 +150,9 @@
         ```mikrotik
         interface enable ether1
         interface enable ether2
-        interface enable ether3
         ip route add dst-address=0.0.0.0/0 gateway=192.168.1.2 check-gateway=ping distance=1
         ip route add dst-address=0.0.0.0/0 gateway=192.168.1.1 check-gateway=ping distance=2
-        ip address add address=192.168.2.2/30 interface=ether2
-        ip address add address=192.168.3.2/28 interface=ether3
+        ip address add address=192.168.3.2/28 interface=ether2
         ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade
         ```
 
@@ -197,10 +191,10 @@
         * маршрут по умолчанию: 192.168.3.2;
         * сервер DNS: 192.168.1.2, 192.168.1.1;
 
-12. На роутере "Router2" выполним перенаправление порта из внешней сети для подключения к серверу "Monitoring" по SSH для удобства настройки (нестандартное значение внешнего порта для безопасности):
+12. На роутерах "Router1" и "Router2" выполним перенаправление порта из внешней сети для подключения к серверу "Monitoring" по SSH для удобства настройки (нестандартное значение внешнего порта для безопасности):
 
     ```mikrotik
-    ip firewall nat add chain=dstnat in-interface=ether3 protocol=tcp dst-port=4224 action=dst-nat to-addresses=192.168.3.10 to-ports=22
+    ip firewall nat add chain=dstnat in-interface=ether2 protocol=tcp dst-port=4224 action=dst-nat to-addresses=192.168.3.10 to-ports=22
     ```
 
     Выясним адрес роутера на внешнем интерфейсе `ether1`:

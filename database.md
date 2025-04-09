@@ -86,6 +86,7 @@
 
     * `IP`: `192.168.3.7`, `192.168.3.8`, `192.168.3.9`
     * `NAME`: `db1`, `db2`, `backup`;
+    * `FAILOVER_SETTING`: `false`, `false`, `true`;
     * `ADMINPASS`: пароль администратора (на всех хостах один и тот же);
     * `REPLPASS`: пароль пользователя для репликации, установленный ранее (на всех хостах один и тот же);
     * `PGPASS`: пароль основного пользователя для PostgreSQL, установленный ранее (на всех хостах один и тот же).
@@ -145,7 +146,7 @@
         hot_standby: "on"
 
     tags:
-      nofailover: false
+      nofailover: FAILOVER_SETTING
       noloadbalance: false
       clonefrom: false
       nosync: false

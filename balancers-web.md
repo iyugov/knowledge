@@ -89,12 +89,14 @@
     sudo ufw allow http
     ```
 
-4. На роутерах "Router1" и "Router2" настроим перенаправление портов для подключения к веб-серверам через балансировщики по виртуальному адресу из внешней сети:
+4. На роутерах "Router1" и "Router2" откроем их веб-интерфейсы на порту 80, в настройках "Webfig" - "IP" - "Services" переназначим порт для "www" с 80 на 81.
+
+5. На роутерах "Router1" и "Router2" настроим перенаправление портов для подключения к веб-серверам через балансировщики по виртуальному адресу из внешней сети:
 
     ```mikrotik
-    ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=8080 action=dst-nat to-addresses=192.168.3.14 to-ports=80
+    ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=80 action=dst-nat to-addresses=192.168.3.14 to-ports=80
     ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=8081 action=dst-nat to-addresses=192.168.3.3 to-ports=80
     ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=8082 action=dst-nat to-addresses=192.168.3.4 to-ports=80
     ```
 
-5. Проверим подключение из внешней сети, в том числе при неработоспособности одного балансировщика и/или одного веб-сервера.
+6. Проверим подключение из внешней сети, в том числе при неработоспособности одного балансировщика и/или одного веб-сервера.

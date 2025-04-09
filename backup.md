@@ -2,11 +2,11 @@
 
 ## Описание
 
-Настраивается периодическое резервное копирование базы данных wiki.
+Настраивается периодическое резервное копирование базы данных и каталога файлов wiki.
 
 ## Требования
 
-* [Настройка мониторинга](monitoring.md)
+* [Настройка синхронизации каталога загрузки файлов](files-upload-sync.md)
 
 ## Выполнение
 
@@ -21,11 +21,15 @@
     ```sh
     #!/bin/bash
 
-    # Параметры базы данных
-    DB_HOST=192.168.3.14
+    # Параметры резервного копирования
+    DB_HOST="192.168.3.14"
     DB_USER="postgres"
     DB_NAME="doc_wiki"
     DB_PASSWORD="PGPASS"
+    FILES_HOST="192.168.3.5"
+    FILES_USER="user"
+    FILES_USER_IDENTITY="/home/user/.ssh/id_knowledge"
+    FILES_DIR="/var/www/mediawiki"
     BACKUP_DIR="/var/backups/wiki"
     PG_PASS_FILE="/tmp/pgpass"
 
@@ -37,23 +41,18 @@
     # Лог-файл
     LOG_FILE="/var/log/backup-wiki.log"
 
-    DATE=$(date +%Y-%m-%d_%H-%M-%S)
-    BACKUP_FILE="${BACKUP_DIR}/backup_${DB_NAME}_${DATE}.sql"
+    NOW=$(date +%Y-%m-%d_%H-%M-%S)
+    BACKUP_SUBDIR="${BACKUP_DIR}/backup_${NOW}"
+    BACKUP_SQL_FILE="${BACKUP_SUBDIR}/db.sql"
+    BACKUP_TAR_FILE="${BACKUP_SUBDIR}/files.tar.gz"
 
     log_message() {
         echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a $LOG_FILE
     }
 
-    log_message "Резервное копирование базы данных MediaWiki начато."
+    log_message "Резервное копирование данных MediaWiki начато."
 
-    if [ -z "$DB_HOST" ]; then
-        echo "Ошибка: хост базы данных недоступен."
-        exit 1
-    fi
-
-    echo "$DB_HOST:5432:$DB_NAME:$DB_USER:$DB_PASSWORD" > $PG_PASS_FILE
-    chmod 600 $PG_PASS_FILE
-
+    # Проверка достаточности ресурсов файловой системы
 
     USED_SPACE_PERCENT=$(df $BACKUP_DIR | awk 'NR==2 {print $5}' | sed 's/%//')
     USED_INODES_PERCENT=$(df -i $BACKUP_DIR | awk 'NR==2 {print $5}' | sed 's/%//')
@@ -62,17 +61,37 @@
 
     if [ $FREE_SPACE_PERCENT -lt $MIN_FREE_SPACE_PERCENT ] || [ $FREE_INODES_PERCENT -lt $MIN_FREE_INODES_PERCENT ]; then
         log_message "Предупреждение: недостаточно свободного места или инодов. Резервное копирование не произведено."
-        rm -f $PG_PASS_FILE
         exit 1
     fi
 
-    PGPASSWORD="$DB_PASSWORD" pg_dump -h $DB_HOST -U $DB_USER -d $DB_NAME -F c -b -v -f "$BACKUP_FILE"
+    log_message "Резервное копирование базы данных начато."
+
+    mkdir $BACKUP_SUBDIR
+
+    echo "$DB_HOST:5432:$DB_NAME:$DB_USER:$DB_PASSWORD" > $PG_PASS_FILE
+    chmod 600 $PG_PASS_FILE
+
+    PGPASSWORD="$DB_PASSWORD" pg_dump -h $DB_HOST -U $DB_USER -d $DB_NAME -F c -b -v -f "$BACKUP_SQL_FILE"
 
     if [ $? -eq 0 ]; then
-        log_message "Резервное копирование базы данных выполнено успешно: $BACKUP_FILE"
+        log_message "Резервное копирование базы данных выполнено: ${BACKUP_SQL_FILE}"
     else
-        log_message "Ошибка резервного копирования базы данных."
+        log_message "Ошибка резервного копирования базы данных. Резервное копирование прервано."
         rm -f $PG_PASS_FILE
+        rm -rf ${BACKUP_SUBDIR}
+        exit 1
+    fi
+
+    log_message "Резервное копирование файлов начато."
+
+    ssh -i ${FILES_USER_IDENTITY} ${FILES_USER}@${FILES_HOST} "tar -czf - ${FILES_DIR}" > "${BACKUP_TAR_FILE}"
+
+    if [ $? -eq 0 ]; then
+        log_message "Резервное копирование файлов выполнено: ${BACKUP_TAR_FILE}"
+    else
+        log_message "Ошибка резервного копирования файлов. Резервное копирование прервано."
+        rm -f $PG_PASS_FILE
+        rm -rf ${BACKUP_SUBDIR}
         exit 1
     fi
 
@@ -80,7 +99,7 @@
 
     if [ $BACKUP_COUNT -gt $MAX_BACKUPS ]; then
         log_message "Количество резервных копий превышает максимальное значение ($MAX_BACKUPS). Удаляем старые копии..."
-        ls -t $BACKUP_DIR/backup_* | tail -n +$((MAX_BACKUPS)) | xargs rm -f
+        ls -t $BACKUP_DIR/backup_* | tail -n +$((MAX_BACKUPS)) | xargs rm -rf
         log_message "Старые копии удалены."
     fi
 

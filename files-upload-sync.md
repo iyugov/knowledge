@@ -81,6 +81,7 @@
     auto = true
     batch = true
     prefer = newer
+    owner = true
     fastcheck = true
     times = true
     confirmbigdel = false
@@ -143,13 +144,29 @@
     do
         logger -t unison-sync "Detected change in $FILE, running unison"
         unison "$UNISON_PROFILE"
+        chmod -R a+rwx 2>&1
+        sudo /home/user/fix-permissions.sh
     done
     ```
 
-    Установим для скрипта право на исполнение:
+    Также создадим скрипт `/home/user/fix-permissions.sh` следующего содержания:
+
+    ```sh
+    chown -R www-data:www-data /var/www/mediawiki/images
+    ```
+
+    Установим для скриптов право на исполнение и неизменность второго скрипта для обычных пользователей:
 
     ```sh
     chmod +x /home/user/sync-images.sh
+    chmod +x /home/user/fix-permissions.sh
+    sudo chown root:root /home/user/fix-permissions.sh
+    ```
+
+    Откроем файл `sudoers` с помощью `sudo visudo` и допишем в него следующую строку:
+
+    ```sh
+    user ALL=(ALL) NOPASSWD: /home/user/fix-permissions.sh
     ```
 
 8. На каждом из хостов "Web1" и "Web2" создадим юнит службы systemd `/etc/systemd/system/unison-images.service` со следующим содержанием:

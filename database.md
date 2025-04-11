@@ -12,9 +12,10 @@
 
 ### Настройка
 
-1. На каждом из хостов "DB1", "DB2" и "Backup" установим Patroni, etcd, и PostgreSQL:
+1. На каждом из хостов "DB1", "DB2" и "Backup" включим синхронизацию времени, установим Patroni, etcd, и PostgreSQL:
 
     ```sh
+    sudo timedatectl set-ntp true
     sudo apt update
     sudo apt install -y postgresql patroni etcd-client etcd-server
     ```
@@ -30,7 +31,7 @@
     ETCD_INITIAL_ADVERTISE_PEER_URLS="http://IP:2380"
     ETCD_LISTEN_PEER_URLS="http://0.0.0.0:2380"
     ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
-    ETCD_ADVERTISE_CLIENT_URLS="http://IP2379"
+    ETCD_ADVERTISE_CLIENT_URLS="http://IP:2379"
     ETCD_INITIAL_CLUSTER="db1=http://192.168.3.7:2380,db2=http://192.168.3.8:2380,backup=http://192.168.3.9:2380"
     ETCD_INITIAL_CLUSTER_STATE="C_STATE"
     ETCD_INITIAL_CLUSTER_TOKEN="patroni-cluster"

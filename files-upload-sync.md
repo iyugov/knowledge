@@ -29,7 +29,7 @@
 3. На хосте "Web1" создадим файл `/home/user/.ssh/config` следующего содержания:
 
     ```config
-    Host 192.168.3.6
+    Host web2
         Hostname 192.168.3.6
         Port 22
         IdentityFile ~/.ssh/id_knowledge
@@ -45,7 +45,7 @@
 4. На хосте "Web2" создадим файл `/home/user/.ssh/config` следующего содержания:
 
     ```config
-    Host 192.168.3.5
+    Host web1
         Hostname 192.168.3.5
         Port 22
         IdentityFile ~/.ssh/id_knowledge
@@ -77,13 +77,12 @@
 
     ```config
     root = /home/user/wiki-images
-    root = ssh://user@192.168.3.6//home/user/wiki-images
+    root = ssh://user@web2//home/user/wiki-images
     auto = true
     batch = true
     prefer = newer
     fastcheck = true
     times = true
-    repeat = watch
     confirmbigdel = false
     log = true
     logfile = /var/log/unison-images.log
@@ -115,13 +114,12 @@
 
     ```config
     root = /home/user/wiki-images
-    root = ssh://user@192.168.3.5//home/user/wiki-images
+    root = ssh://user@web1//home/user/wiki-images
     auto = true
     batch = true
     prefer = newer
     fastcheck = true
     times = true
-    repeat = watch
     confirmbigdel = false
     log = true
     logfile = /var/log/unison-images.log

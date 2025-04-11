@@ -55,10 +55,10 @@
 
     ```config
     vrrp_instance VI_1 {
-        state MASTER
+        state BACKUP
         interface enp0s3
         virtual_router_id 1
-        priority 200
+        priority 100
         advert_int 1
         authentication {
             auth_type PASS
@@ -78,6 +78,12 @@
     ```sh
     sudo systemctl restart keepalived
     sudo systemctl enable keepalived
+    ```
+
+    Добавим правило межсетевого экрана, разрешающее получение пакетов VRRP от второго банансировщика:
+
+    ```sh
+    sudo ufw allow proto vrrp from 192.168.3.4
     ```
 
 4. На хосте "Balancer2" создадим и откроем файл конфигурации keepalived:
@@ -113,6 +119,12 @@
     ```sh
     sudo systemctl restart keepalived
     sudo systemctl enable keepalived
+    ```
+
+    Добавим правило межсетевого экрана, разрешающее получение пакетов VRRP от первого банансировщика:
+
+    ```sh
+    sudo ufw allow proto vrrp from 192.168.3.3
     ```
 
 5. Проверим назначение виртуального адреса 192.168.3.14 на хосте "Balancer1":

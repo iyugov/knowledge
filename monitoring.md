@@ -105,7 +105,7 @@
 12. На роутерах "Router1" и "Router2" настроим перенаправление портов для подключения к веб-серверам через балансировщики по виртуальному адресу из внешней сети по порту 8088:
 
     ```mikrotik
-    ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=8088 action=dst-nat to-addresses=192.168.3.10 to-ports=80
+    ip firewall nat add chain=dstnat in-interface=vrrp1 protocol=tcp dst-port=8088 action=dst-nat to-addresses=192.168.3.10 to-ports=80
     ```
 
 13. В веб-браузере на хосте, имеющим доступ к хосту "Monitoring", откроем ресурс по соответствующеу адресу и порту в каталоге `/zabbix`.

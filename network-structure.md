@@ -134,7 +134,7 @@
 
 10. Настроим сетевые интерфейсы роутеров:
 
-    * в консоли роутера "Router1" установим пароль администратора (по умолчанию он пустой) и выполнми (`192.168.1.1` и `192.168.1.2` - адреса шлюзов базовой системы):
+    * в консоли роутера "Router1" установим пароль администратора (по умолчанию он пустой) и выполним настройки (`192.168.1.1` и `192.168.1.2` - адреса шлюзов базовой системы):
 
         ```mikrotik
         interface enable ether1
@@ -142,10 +142,14 @@
         ip route add dst-address=0.0.0.0/0 gateway=192.168.1.1 check-gateway=ping distance=1
         ip route add dst-address=0.0.0.0/0 gateway=192.168.1.2 check-gateway=ping distance=2
         ip address add address=192.168.3.1/28 interface=ether2
-        ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade
+        interface vrrp add interface=ether1 vrid=1 priority=100 name=vrrp1
+        ip address add address=192.168.122.99 interface=vrrp1
+        interface vrrp add interface=ether2 vrid=2 priority=100 name=vrrp2
+        ip address add address=192.168.3.13 interface=vrrp2
+        ip firewall nat add chain=srcnat out-interface=vrrp1 action=masquerade
         ```
 
-    * в консоли роутера "Router2" установим пароль администратора (по умолчанию он пустой) и выполнми (`192.168.1.1` и `192.168.1.2` - адреса шлюзов базовой системы):
+    * в консоли роутера "Router2" установим пароль администратора (по умолчанию он пустой) и выполним настройки (`192.168.1.1` и `192.168.1.2` - адреса шлюзов базовой системы):
 
         ```mikrotik
         interface enable ether1
@@ -153,48 +157,40 @@
         ip route add dst-address=0.0.0.0/0 gateway=192.168.1.2 check-gateway=ping distance=1
         ip route add dst-address=0.0.0.0/0 gateway=192.168.1.1 check-gateway=ping distance=2
         ip address add address=192.168.3.2/28 interface=ether2
-        ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade
+        interface vrrp add interface=ether1 vrid=1 priority=90 name=vrrp1
+        ip address add address=192.168.122.99 interface=vrrp1
+        interface vrrp add interface=ether2 vrid=2 priority=90 name=vrrp2
+        ip address add address=192.168.3.13 interface=vrrp2
+        ip firewall nat add chain=srcnat out-interface=vrrp1 action=masquerade
         ```
 
-11. На серверах произведём следующие настройки сетевых подключений (серверы DNS во внешней сети имеют адреса 192.168.1.1 и 192.168.1.2):
+11. На серверах произведём следующие настройки сетевых подключений (сервер DNS во внешней сети имеет адрес 192.168.1.1):
 
     * "Balancer1":
         * IP-адрес: 192.168.3.3/28;
-        * маршрут по умолчанию: 192.168.3.1;
-        * серверы DNS: 192.168.1.1, 192.168.1.2;
     * "Balancer2":
         * IP-адрес: 192.168.3.4/28;
-        * маршрут по умолчанию: 192.168.3.2;
-        * сервер DNS: 192.168.1.2, 192.168.1.1;
     * "Web1":
         * IP-адрес: 192.168.3.5/28;
-        * маршрут по умолчанию: 192.168.3.1;
-        * сервер DNS: 192.168.1.1, 192.168.1.2;
     * "Web2":
         * IP-адрес: 192.168.3.6/28;
-        * маршрут по умолчанию: 192.168.3.2;
-        * сервер DNS: 192.168.1.2, 192.168.1.1;
     * "DB1":
         * IP-адрес: 192.168.3.7/28;
-        * маршрут по умолчанию: 192.168.3.1;
-        * сервер DNS: 192.168.1.1, 192.168.1.2;
     * "DB2":
         * IP-адрес: 192.168.3.8/28;
-        * маршрут по умолчанию: 192.168.3.2;
-        * сервер DNS: 192.168.1.2, 192.168.1.1;
     * "Backup":
         * IP-адрес: 192.168.3.9/28;
-        * маршрут по умолчанию: 192.168.3.1;
-        * сервер DNS: 192.168.1.1, 192.168.1.2;
     * "Monitoring":
         * IP-адрес: 192.168.3.10/28;
-        * маршрут по умолчанию: 192.168.3.2;
-        * сервер DNS: 192.168.1.2, 192.168.1.1;
+    * все хосты:
+        * маршрут по умолчанию: 192.168.3.13;
+        * сервер DNS: 192.168.1.1;
 
 12. На роутерах "Router1" и "Router2" выполним перенаправление порта из внешней сети для подключения к серверу "Monitoring" по SSH для удобства настройки (нестандартное значение внешнего порта для безопасности):
 
     ```mikrotik
-    ip firewall nat add chain=dstnat in-interface=ether2 protocol=tcp dst-port=4224 action=dst-nat to-addresses=192.168.3.10 to-ports=22
+    ip firewall nat add chain=dstnat in-interface=ether1 protocol=tcp dst-port=4224 action=dst-nat to-addresses=192.168.3.10 to-ports=22
+    ip firewall nat add chain=dstnat in-interface=vrrp1 protocol=tcp dst-port=4224 action=dst-nat to-addresses=192.168.3.10 to-ports=22
     ```
 
     Выясним адрес роутера на внешнем интерфейсе `ether1`:
